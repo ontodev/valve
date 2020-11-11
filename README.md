@@ -6,9 +6,9 @@ So far we're working on:
 - [valve.py](https://github.com/ontodev/valve.py)
 - [valve.js](https://github.com/ontodev/valve.js)
 
-### Configuration Files
+## Configuration Files
 
-Three VALVE configuration files (as TSV or CSV) are required:
+Two VALVE configuration files (as TSV or CSV) are required:
 * `datatype`
 * `field`
 
@@ -16,7 +16,7 @@ You may also include an optional `rule` table.
 
 These can be passed as individual files to the input, or you can pass a directory containing these files. We list the required and optional headers below, but you are welcome to include any other headers you find helpful (e.g., `note`). These will be ignored by VALVE.
 
-#### Datatype Table
+### Datatype Table
 
 Datatypes allow you to define regex patterns for cell values. The datatypes are a hierarchy of types, and when a datatype is provided as a `condition`, all parent values are also checked.
 
@@ -33,7 +33,7 @@ The regex patterns should be enclosed with forward slashes (e.g., `/^$/` matches
 
 [Example datatype table](https://github.com/ontodev/valve.py/blob/main/tests/resources/inputs/datatype.tsv)
 
-#### Field Table
+### Field Table
 
 The field table allows you to define checks for the contents of columns.
 
@@ -46,7 +46,7 @@ All contents of the `table.column` are validated against the `condition`.
 
 [Example field table](https://github.com/ontodev/valve.py/blob/main/tests/resources/inputs/field.tsv)
 
-#### Rule Table
+### Rule Table
 
 The rule table allows you to define more complex "when" rules.
 
@@ -65,37 +65,37 @@ If the contents of the `"when table"."when column"` do not pass the `when condit
 
 ---
 
-### Functions
+## Functions
 
 VALVE functions are provided as values to the `condition` column in the field table or the `* condition` fields in the rule table.
 
 When referencing the "target column", that is either the `column` from the field table, or the `then column` from the rule table.
 
-#### CURIE
+### CURIE
 
 Usage: `CURIE(str-or-column, [str-or-column, ...])`
 
 This function validates that the contents of the target column are all [CURIEs](https://www.w3.org/TR/curie/) and the prefix of each CURIE is present in the argument list. The `str-or-column` may be a double-quoted string (e.g., `CURIE("foo")`) or a `table.column` pair in which prefixes are defined (e.g., `CURIE(prefix.prefix)`). You may provide one or more arguments.
 
-#### distinct
+### distinct
 
 Usage: `distinct(expr, [table.column, ...])`
 
 This function validates that the contents of the target column are all distinct. If other `table.column` pairs (one or more) are provided after the `expr`, the values of the target column must also be distinct with all those values. The `expr` is either a datatype or another function to perform on the contents of the column.
 
-#### in
+### in
 
 Usage: `in(str-or-column, [str-or-column, ...])`
 
 This function validates that the contents of the target column are values present in the argument list. The `str-or-column` may be a double-quoted string (e.g., `in("a", "b", "c")`) or a `table.column` pair in which allowed values are defined (e.g., `in(external.Label)`). You may provide one or more arguments.
 
-#### list
+### list
 
 Usage: `list("char", expr)`
 
 This function splits the contents of the target column on the `char` (e.g, `|`) and then checks `expr` on each sub-value. The `expr` is either a datatype or another function to perform. If one sub-value fails the `expr` check, this function fails.
 
-#### lookup
+### lookup
 
 Usage: `lookup(table.column, table.column2)`
 
@@ -121,7 +121,7 @@ Given the contents of the rule table:
 | -------- | ----------- |
 | bar      | FOO:123     |
 
-#### split
+### split
 
 Usage: `split("char", count, expr1, expr2, [expr3, ...])`
 
@@ -139,7 +139,7 @@ And given the value to check:
 
 "FOO:123" will be validated against `CURIE(prefix.prefix)` and "a" will be validated against `in("a", "b", "c")`.
 
-#### tree
+### tree
 
 Usage: `tree(table.column, [table2.column2])`
 
@@ -151,7 +151,7 @@ The `tree` function may only be used as a `condition` in the field table. The tr
 | ----- | ------ | ------------- |
 | foo   | bar    | tree(foo.baz) |
 
-#### under
+### under
 
 Usage: `under(table.column, "top level", [direct=true])`
 
