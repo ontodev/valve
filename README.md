@@ -11,24 +11,25 @@ So far we're working on:
 Three VALVE configuration files (as TSV or CSV) are required:
 * `datatype`
 * `field`
-* `rule`
 
-These can be passed as individual files to the input, or you can pass a directory containing these files.
+You may also include an optional `rule` table.
+
+These can be passed as individual files to the input, or you can pass a directory containing these files. We list the required and optional headers below, but you are welcome to include any other headers you find helpful (e.g., `note`). These will be ignored by VALVE.
 
 #### Datatype Table
 
-Datatypes allow you to define regex patterns for cell values. The datatypes are a hierarchy of types, and when a datatype is provided as a `type` or `condition`, all parent values are also checked.
+Datatypes allow you to define regex patterns for cell values. The datatypes are a hierarchy of types, and when a datatype is provided as a `condition`, all parent values are also checked.
 
-The datatype table requires the following fields:
-* `datatype`: name of datatype
-* `parent`: parent datatype
-* `match`: regex match
-* `level`: validation fail level when a value does not meet the regex match (info, warn, or error)
+The datatype table can have the following fields (a `*` indicates that it is a required field):
+* `datatype` \*: name of datatype
+* `parent` \*: parent datatype
+* `match`\*: regex match (this may be left blank)
+* `level` \*: validation fail level when a value does not meet the regex match (info, warn, or error)
 * `description`: brief description of datatype
 * `instructions`: how to fix problems
 * `replace`: regex automatic replacement
 
-The regex patterns should be enclosed with forward slashes (e.g., `/^$/` matches blanks). Replacements should be formatted like `sed` replacements (e.g., `s/\n/ /g` replaces newlines with spaces).
+The regex patterns should be enclosed with forward slashes (e.g., `/^$/` matches blanks). Replacements should be formatted like `perl` replacements (e.g., `s/\n/ /g` replaces newlines with spaces).
 
 [Example datatype table](https://github.com/ontodev/valve.py/blob/main/tests/resources/inputs/datatype.tsv)
 
@@ -36,13 +37,12 @@ The regex patterns should be enclosed with forward slashes (e.g., `/^$/` matches
 
 The field table allows you to define checks for the contents of columns.
 
-The field table requires the following fields:
-* `table`: table name within inputs
-* `column`: column name within table
-* `type`: function or datatype to validate
-* `note`: developer note
+The field table requires the following fields (a `*` indicates that it is a required field):
+* `table` \*: table name within inputs
+* `column` \*: column name within table
+* `condition` \*: function or datatype to validate
 
-All contents of the `table.column` are validated against the `type`.
+All contents of the `table.column` are validated against the `condition`.
 
 [Example field table](https://github.com/ontodev/valve.py/blob/main/tests/resources/inputs/field.tsv)
 
@@ -50,16 +50,14 @@ All contents of the `table.column` are validated against the `type`.
 
 The rule table allows you to define more complex "when" rules.
 
-The rule table requires the following fields:
-* `when table`: table name within inputs
-* `when column`: column name within "when table"
-* `when condition`: condition to check contents of "when table"."when column" against
-* `then table`: table name within inputs
-* `then column`: column name within "then table"
-* `then condition`: datatype or function to validate when "when condition" returns true
+The rule table requires the following fields (a `*` indicates that it is a required field):
+* `table` \*: table name within inputs
+* `when column` \*: column name within the table
+* `when condition` \*: condition to check contents of "when table"."when column" against
+* `then column` \*: column name within the table
+* `then condition` \*: datatype or function to validate when "when condition" returns true
 * `level`: validation fail level when the "then condition" fails (info, warn, or error)
 * `description`: description of failure, included in message
-* `note`: developer note
 
 If the contents of the `"when table"."when column"` do not pass the `when condition`, then the `then condition` is never run. Failing the `when condition` is not considered a validation failure.
 
@@ -69,7 +67,7 @@ If the contents of the `"when table"."when column"` do not pass the `when condit
 
 ### Functions
 
-VALVE functions are provided as values to the `type` column in the field table or the `* condition` fields in the rule table.
+VALVE functions are provided as values to the `condition` column in the field table or the `* condition` fields in the rule table.
 
 When referencing the "target column", that is either the `column` from the field table, or the `then column` from the rule table.
 
@@ -77,7 +75,7 @@ When referencing the "target column", that is either the `column` from the field
 
 Usage: `CURIE(str-or-column, [str-or-column, ...])`
 
-This function validates that the contents of the target column are all CURIEs and the prefix of each CURIE is present in the argument list. The `str-or-column` may be a double-quoted string (e.g., `CURIE("foo")`) or a `table.column` pair in which prefixes are defined (e.g., `CURIE(prefix.prefix)`). You may provide one or more arguments.
+This function validates that the contents of the target column are all [CURIEs](https://www.w3.org/TR/curie/) and the prefix of each CURIE is present in the argument list. The `str-or-column` may be a double-quoted string (e.g., `CURIE("foo")`) or a `table.column` pair in which prefixes are defined (e.g., `CURIE(prefix.prefix)`). You may provide one or more arguments.
 
 #### distinct
 
@@ -131,8 +129,8 @@ This function splits the contents of the target column on the `char`. The number
 
 Given the contents of the field table:
 
-| table | column | type |
-| ----- | ------ | ---- |
+| table | column | condition |
+| ----- | ------ | --------- |
 | foo   | bar    | split("&", 2, CURIE(prefix.prefix), in("a", "b", "c")) |
 
 And given the value to check:
@@ -147,9 +145,9 @@ Usage: `tree(table.column, [table2.column2])`
 
 This function creates a tree structure using the contents of the target column as "parent" values and the contents of `table.column` and "child" values. The `table` portion of the first argument must be the same as the `table` field in the field table. An optional `table2.column2` can be passed as long as `table2.column2` has already been defined as a tree. This means that the current tree will extend the `table2.column2` tree. All "parent" values are required to be in the "child" values, or in the extended tree (if provided).
 
-The `tree` function may only be used as a `type` in the field table. The tree name which can be referenced later in other `tree` functions and the `under` function is the `table` and `column` pair from the field table, e.g. this creates the tree `foo.bar` with child values form `foo.baz`:
+The `tree` function may only be used as a `condition` in the field table. The tree name which can be referenced later in other `tree` functions and the `under` function is the `table` and `column` pair from the field table, e.g. this creates the tree `foo.bar` with child values form `foo.baz`:
 
-| table | column | type          |
+| table | column | condition     |
 | ----- | ------ | ------------- |
 | foo   | bar    | tree(foo.baz) |
 
