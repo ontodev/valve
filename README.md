@@ -97,15 +97,15 @@ This function splits the contents of the target column on the `char` (e.g, `|`) 
 
 ### lookup
 
-Usage: `lookup(table.column, table.column2)`
+Usage: `lookup(table, column, column2)`
 
-This function should be used only in the `then condition` field of the rule table. This function takes the contents of the `when column` and searches for that value in `table.column`. If that value is found, then the `then column` value must be the corresponding value from `table.column2`. Both `table` names passed to `lookup` must be the same.
+This function should be used only in the `then condition` field of the rule table. This function takes the contents of the `when column` and searches for that value in `column`. If that value is found, then the `then column` value must be the corresponding value from `column2`.
 
 Given the contents of the rule table:
 
 | when table | when column | when condition | then table | then column | then condition | 
 | ---------- | ----------- | -------------- | ---------- | ----------- | -------------- |
-| exposure   | Material    | not blank      | exposure   | Material ID | lookup(external.Label, external.ID) |
+| exposure   | Material    | not blank      | exposure   | Material ID | lookup(external, Label, ID) |
 
 ... validates that when `exposure.Material` is not blank, the `exposure."Material ID"` in that same row is the `external.ID` in the same row as the `exposure.Material` value in `external.Label`:
 
@@ -141,9 +141,9 @@ And given the value to check:
 
 ### tree
 
-Usage: `tree(table.column, [table2.column2])`
+Usage: `tree(column, [table2.column2])`
 
-This function creates a tree structure using the contents of the target column as "parent" values and the contents of `table.column` and "child" values. The `table` portion of the first argument must be the same as the `table` field in the field table. An optional `table2.column2` can be passed as long as `table2.column2` has already been defined as a tree. This means that the current tree will extend the `table2.column2` tree. All "parent" values are required to be in the "child" values, or in the extended tree (if provided).
+This function creates a tree structure using the contents of the target column as "parent" values and the contents of `column` (from the same target table) as "child" values. An optional `table2.column2` can be passed as long as `table2.column2` has already been defined as a tree. This means that the current tree will extend the `table2.column2` tree. All "parent" values are required to be in the "child" values, or in the extended tree (if provided).
 
 The `tree` function may only be used as a `condition` in the field table. The tree name which can be referenced later in other `tree` functions and the `under` function is the `table` and `column` pair from the field table, e.g. this creates the tree `foo.bar` with child values form `foo.baz`:
 
