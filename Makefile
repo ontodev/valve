@@ -7,7 +7,7 @@ build/valve_grammar.ne: | build
 build/nearley: | build
 	cd build && git clone https://github.com/Hardmath123/nearley
 
-build/valve_grammar.py: valve_grammar.ne | build/nearley
+build/valve_grammar.py: build/valve_grammar.ne | build/nearley
 	python3 -m lark.tools.nearley $< expression $| --es6 > $@
 
 # Generate grammar, then ...
