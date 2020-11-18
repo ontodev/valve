@@ -73,10 +73,10 @@ When referencing the "target column", that is either the `column` from the field
 
 There are five types of arguments passed to VALVE functions:
 * **function**: another VALVE function
-* **named argument**: some functions have optional args in the format `arg=value` (e.g., `direct=true` in [under](#under))
+* **named argument**: some functions have optional args in the format `arg=value` (e.g., `direct=true` in [under](#under)) - if the value has a space or other non-alphanumeric characters, it should be enclosed in double quotes
 * **regex**: Perl-style regex pattern, always single-line (`/pattern/[flags]` for matching or `s/pattern/replacement/[flags]` for substitution)
 * **table-column pair**: `table.column` or, when the column name has spaces, `table."column name"`
-* **double-quoted string**: any other argument must be enclosed in double quotes - this includes table names and column names when they are not used together as a table-column pair (e.g., in [lookup](#lookup))
+* **string**: any other argument is a basic string - any string with spaces or other non-alphanumeric characters must be enclosed in double quotes
 
 ### CURIE
 
@@ -104,7 +104,7 @@ This function splits the contents of the target column on the `char` (e.g, `|`) 
 
 ### lookup
 
-Usage: `lookup("table", "column", "column2")`
+Usage: `lookup(table, column, column2)`
 
 This function should be used only in the `then condition` field of the rule table. This function takes the contents of the `when column` and searches for that value in `column`. If that value is found, then the `then column` value must be the corresponding value from `column2`.
 
@@ -163,7 +163,7 @@ Note that if you wish to use `/` in your regex pattern or substition, it must be
 
 ### tree
 
-Usage: `tree("column", [table2.column2])`
+Usage: `tree(column, [table2.column2])`
 
 This function creates a tree structure using the contents of the target column as "parent" values and the contents of `column` (from the same target table) as "child" values. An optional `table2.column2` can be passed as long as `table2.column2` has already been defined as a tree. This means that the current tree will extend the `table2.column2` tree. All "parent" values are required to be in the "child" values, or in the extended tree (if provided).
 
