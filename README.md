@@ -74,7 +74,7 @@ When referencing the "target column", that is either the `column` from the field
 There are five types of arguments passed to VALVE functions:
 * **function**: another VALVE function
 * **named argument**: some functions have optional args in the format `arg=value` (e.g., `direct=true` in [under](#under))
-* **regex**: Perl-style regex pattern, always single-line (`s/pattern/[flags]` or `s/pattern/replacement/[flags]`)
+* **regex**: Perl-style regex pattern, always single-line (`/pattern/[flags]` for matching or `s/pattern/replacement/[flags]` for substitution)
 * **table-column pair**: `table.column` or, when the column name has spaces, `table."column name"`
 * **double-quoted string**: any other argument must be enclosed in double quotes - this includes table names and column names when they are not used together as a table-column pair (e.g., in [lookup](#lookup))
 
