@@ -20,10 +20,10 @@ These can be passed as individual files to the input, or you can pass a director
 
 Datatypes allow you to define regex patterns for cell values. The datatypes are a hierarchy of types, and when a datatype is provided as a `condition`, all parent values are also checked.
 
-The datatype table can have the following fields (a `*` indicates that it is a required field):
+The datatype table can have the following fields (a `*` indicates that it is a required columns):
 * `datatype` \*: name of datatype - a single word that uses any alphanumeric character or `-` and `_`
 * `parents` \*: parent or parents datatype - multiple parents may be provided in a space-separated list
-* `match`\*: regex match (this may be left blank)
+* `match`\*: regex match (this column is required but blank cells are allowed)
 * `level` \*: validation fail level when a value does not meet the regex match (info, warn, or error)
 * `description`: brief description of datatype
 * `instructions`: how to fix problems
