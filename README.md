@@ -20,10 +20,10 @@ These can be passed as individual files to the input, or you can pass a director
 
 Datatypes allow you to define regex patterns for cell values. The datatypes are a hierarchy of types, and when a datatype is provided as a `condition`, all parent values are also checked.
 
-The datatype table can have the following fields (a `*` indicates that it is a required field):
-* `datatype` \*: name of datatype
-* `parent` \*: parent datatype
-* `match`\*: regex match (this may be left blank)
+The datatype table can have the following fields (a `*` indicates that it is a required columns):
+* `datatype` \*: name of datatype - a single word that uses any alphanumeric character or `-` and `_`
+* `parents` \*: parent or parents datatype - multiple parents may be provided in a space-separated list
+* `match`\*: regex match (this column is required but blank cells are allowed)
 * `level` \*: validation fail level when a value does not meet the regex match (info, warn, or error)
 * `description`: brief description of datatype
 * `instructions`: how to fix problems
@@ -70,6 +70,13 @@ If the contents of the `"when table"."when column"` do not pass the `when condit
 VALVE functions are provided as values to the `condition` column in the field table or the `* condition` fields in the rule table.
 
 When referencing the "target column", that is either the `column` from the field table, or the `then column` from the rule table.
+
+There are five types of arguments passed to VALVE functions:
+* **function**: another VALVE function
+* **named argument**: some functions have optional args in the format `arg=value` (e.g., `direct=true` in [under](#under)) - if the value has a space or other non-alphanumeric characters, it should be enclosed in double quotes
+* **regex**: Perl-style regex pattern, always single-line (`/pattern/[flags]` for matching or `s/pattern/replacement/[flags]` for substitution)
+* **table-column pair**: `table.column` or, when the column name has spaces, `table."column name"`
+* **string**: any other argument is a basic string - any string with spaces or other non-alphanumeric characters must be enclosed in double quotes
 
 ### CURIE
 
@@ -125,7 +132,7 @@ Given the contents of the rule table:
 
 Usage: `split("char", count, expr1, expr2, [expr3, ...])`
 
-This function splits the contents of the target column on the `char`. The number of sub-values must be equal to the `count` and the number of `exprs` provided after must also be equal to the `count`. Each `expr` is a datatype or function that is checked against the corresponding sub-value.
+This function splits the contents of the target column on the `"char"`. The number of sub-values must be equal to the `count` and the number of `exprs` provided after must also be equal to the `count`. Each `expr` is a datatype or function that is checked against the corresponding sub-value.
 
 Given the contents of the field table:
 
@@ -138,6 +145,21 @@ And given the value to check:
 > FOO:123 & a
 
 "FOO:123" will be validated against `CURIE(prefix.prefix)` and "a" will be validated against `in("a", "b", "c")`.
+
+### sub
+
+Usage: `sub(s/pattern/replacement/[flags], expr)`
+
+This function uses regex substitution on the contents of the target column to replace `pattern` with `replacement`. You may include optional regex flags at the end of the pattern to dictate how the pattern should match. The following flags are currently supported:
+
+* `a`: enable ASCII matching; `\w`, `\W`, `\b`, `\B`, `\d`, `\D`, `\s` and `\S` match only ASCII characters
+* `g`: global match; if not includded, only replace the first match
+* `i`: case-insensitive matching
+* `x`: ignore non-escaped whitespace and treat any text after a non-escaped `#` as a comment
+
+Once the value has been substituted, `expr` is run over the new value. This can be a datatype or a function.
+
+Note that if you wish to use `/` in your regex pattern or substition, it must be escaped (`\/`).
 
 ### tree
 
