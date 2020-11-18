@@ -22,7 +22,7 @@ Datatypes allow you to define regex patterns for cell values. The datatypes are 
 
 The datatype table can have the following fields (a `*` indicates that it is a required field):
 * `datatype` \*: name of datatype - a single word that uses any alphanumeric character or `-` and `_`
-* `parent` \*: parent datatype
+* `parents` \*: parent or parents datatype - multiple parents may be provided in a space-separated list
 * `match`\*: regex match (this may be left blank)
 * `level` \*: validation fail level when a value does not meet the regex match (info, warn, or error)
 * `description`: brief description of datatype
