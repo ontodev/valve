@@ -78,11 +78,29 @@ There are five types of arguments passed to VALVE functions:
 * **table-column pair**: `table.column` or, when the column name has spaces, `table."column name"`
 * **string**: any other argument is a basic string - any string with spaces or other non-alphanumeric characters must be enclosed in double quotes
 
-### CURIE
+### any
 
-Usage: `CURIE(str-or-column, [str-or-column, ...])`
+Usage: `any(expr, expr, [expr, ...])`
 
-This function validates that the contents of the target column are all [CURIEs](https://www.w3.org/TR/curie/) and the prefix of each CURIE is present in the argument list. The `str-or-column` may be a double-quoted string (e.g., `CURIE("foo")`) or a `table.column` pair in which prefixes are defined (e.g., `CURIE(prefix.prefix)`). You may provide one or more arguments.
+This function validates that the contents of the target column meet at least one of the conditions provided in the arguments of `any`. The `expr` is either a datatype or another function.
+
+### concat
+
+Usage: `concat(str-or-expr, str-or-expr, [str-or-expr, ...])`
+
+This function validates the given expressions (datatypes or functions) based on their place within the function. If a string is provided and it is not a datatype label, this will be evaluated as a literal that matches a substring within the value of the target column. Any contents between literals will be evaluated by the expression between them. Whitespace is important, so make sure to include it in the literals.
+
+For example, take the target value:
+> foo | bar & baz
+
+And the function:
+```
+concat(label, " | ", in(table.column), " & ", under(table.column))
+```
+
+The value 'foo' is validated as a `label` datatype, 'bar' is validated by the `in` function, and 'baz' is validated by the `under` function. The pipe and ampersand are not validated, but they are used to determine the values to validate.
+
+If a string literal is not found in the target value, the function will return an error.
 
 ### distinct
 
@@ -127,6 +145,12 @@ Given the contents of the rule table:
 | Material | Material ID |
 | -------- | ----------- |
 | bar      | FOO:123     |
+
+### not
+
+Usage: `not(expr)`
+
+This function validates that the contents of the target column *do not* match the provided expression. The expression is either a datatype or another function.
 
 ### split
 
