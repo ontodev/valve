@@ -10,6 +10,8 @@ build build/distinct:
 
 ########## PYTHON TESTS ##########
 
+# venv for testing manually
+
 .PHONY: _venv
 _venv:
 	python3 -m venv _venv
@@ -20,6 +22,8 @@ build/valve.py/: | build
 python-setup: _venv build/valve.py
 	source _venv/bin/activate
 	cd $(word 2,$^) && pip install .
+
+# test steps
 
 build/python-errors.tsv: tests/inputs
 	valve $< -o $@ || true
@@ -34,7 +38,6 @@ python-diff-distinct: tests/compare.py tests/errors-distinct.tsv build/python-er
 	python3 $^
 
 python-test:
-	make python-setup
 	make python-diff
 	make python-diff-distinct
 
