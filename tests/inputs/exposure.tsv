@@ -1,0 +1,8 @@
+Exposure Process Reported	Exposure Material ID	Exposure Material Reported	Disease Ontology ID	Disease Reported	Disease Stage Reported	Status	Note
+occurrence of infectious disease	NCBITaxon:12637	Dengue virus	DOID:12206	dengue hemorrhagic fever	Acute/Recent onset	valid
+administering substance in vivo	NCBITaxon:11103	Hepacivirus C				valid
+exposure to substance without evidence for disease	NCBITaxon:12637	Dengue virus				valid
+occurrence of disease						invalid	missing disease
+exposure to substance without evidence for disease	NCBITaxon:11103	Dengue virus				invalid	mismatched exposure material
+occurrence of infectious disease	NCBITaxon:11103	Hepacivirus C	DOID:12206	dengue hemorrhagic fever	Acute/Recent onset	invalid	mismatched material basis
+occurrence of infectious disease	NCBITaxon:12637	Dengue virus	DOID:12206	dengue hemorrhagic fever		invalid	missing disease stage

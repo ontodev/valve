@@ -1,0 +1,15 @@
+table	column	condition	note
+*	Type	"in(""owl:Class"", ""owl:ObjectProperty"")"	* matches any table; value IN set
+prefix	prefix	prefix	
+prefix	base	IRI	
+external	ID	"distinct(concat(in(prefix.prefix), "":"", numeric))"	a CURIE with a prefix from the prefix table
+external	Label	label	
+external	Parent	tree(Label)	same type as external.label field i.e. label; also build a tree; parent must be in label
+external	Material Basis	"any(blank, under(external.Parent, ""material entity""))"	
+exposure	Exposure Process Reported	"under(external.Parent, ""exposure process"")"	same type as external.parent field, i.e. label; must also be 'exposure process' or under that node in the external.parent tree
+exposure	Exposure Material ID	"any(blank, concat(in(prefix.prefix), "":"", numeric))"	
+exposure	Exposure Material Reported	"any(blank, under(external.Parent, ""material entity""))"	
+exposure	Disease Ontology ID	"any(blank, concat(in(prefix.prefix), "":"", numeric))"	
+exposure	Disease Reported	"any(blank, under(external.Parent, ""disease""))"	
+exposure	Disease Stage Reported	"any(blank, under(external.Parent, ""disease stage""))"	
+cytometry	populationDefinitionReported	"list("", "", sub(s/(\[.*\])?(\+|-)*$//gi, in(protein.Synonym)))"	

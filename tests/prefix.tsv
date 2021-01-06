@@ -1,0 +1,8 @@
+prefix	base
+BFO	http://purl.obolibrary.org/obo/BFO_
+DOID	http://purl.obolibrary.org/obo/DOID_
+OBI	http://purl.obolibrary.org/obo/OBI_
+OGMS	http://purl.obolibrary.org/obo/OGMS_
+ONTIE	https://ontology.iedb.org/ontology/
+NCBITaxon	http://purl.obolibrary.org/obo/NCBITaxon_
+EX	http://example.com/
