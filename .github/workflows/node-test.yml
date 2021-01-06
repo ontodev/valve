@@ -28,8 +28,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Install dependencies
       run: |
-        cd valve.js && npm i -g .
-        cat valve.js/requirements.txt | xargs npm install -g
+        cd valve.js && npm i -g . && cat requirements.txt | xargs npm install -g
     - name: Test valve.js
       run: |
         make node-test
