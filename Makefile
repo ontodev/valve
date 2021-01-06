@@ -10,7 +10,7 @@ build build/distinct:
 
 ########## PYTHON TESTS ##########
 
-# venv for testing manually
+# venv for testing locally
 
 .PHONY: _venv
 _venv:
@@ -25,7 +25,7 @@ python-setup: _venv build/valve.py
 
 # test steps
 
-build/python-errors.tsv: tests/inputs
+build/python-errors.tsv: tests/inputs | build
 	valve $< -o $@ || true
 
 build/python-errors-distinct.tsv: tests/inputs | build/distinct
