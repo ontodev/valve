@@ -1,10 +1,8 @@
 name: Node test
 
 on:
-  push:
-  workflow_dispatch:
   repository_dispatch:
-    types: [valve_js_push]
+    types: [valve-js-push]
 
 jobs:
   build:
