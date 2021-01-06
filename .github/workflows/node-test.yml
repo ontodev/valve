@@ -29,7 +29,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd valve.js && npm i -g .
-        cp -r valve.js/node_modules .
+        cat valve.js/requirements.txt | xargs npm install -g
     - name: Test valve.js
       run: |
         make node-test
