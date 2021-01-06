@@ -2,8 +2,6 @@ name: Python test
 
 on:
   workflow_dispatch:
-    tags:
-      description: 'Test valve.py'
   repository_dispatch:
     types: [valve_py_push]
 
