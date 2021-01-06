@@ -43,6 +43,8 @@ python-test:
 
 ########## JAVASCRIPT TESTS ##########
 
+# nodeenv for testing locally
+
 # TODO - revert to master once port is merged
 build/valve.js/: | build
 	cd build && \
@@ -58,20 +60,21 @@ node-setup: _nodeenv build/valve.js
 	source _nodeenv/bin/activate
 	cd $(word 2,$^) && npm i .
 
-build/js-errors.tsv: tests/inputs
+# test steps
+
+build/node-errors.tsv: tests/inputs | build
 	valve-js $< -o $@ || true
 
-build/js-errors-distinct.tsv: tests/inputs | build/distinct
+build/node-errors-distinct.tsv: tests/inputs | build/distinct
 	valve-js $< -d build/distinct -o $@ || true
 
-js-diff: tests/compare.py tests/errors.tsv build/js-errors.tsv
+node-diff: tests/compare.py tests/errors.tsv build/node-errors.tsv
 	python3 $^
 
-js-diff-distinct: tests/compare.py tests/errors-distinct.tsv build/js-errors-distinct.tsv
+node-diff-distinct: tests/compare.py tests/errors-distinct.tsv build/node-errors-distinct.tsv
 	python3 $^
 
-js-test:
-	make node-setup
-	make js-diff
-	make js-diff-distinct
+node-test:
+	make node-diff
+	make node-diff-distinct
 
