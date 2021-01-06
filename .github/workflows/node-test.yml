@@ -27,7 +27,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Install dependencies
       run: |
-        cd valve.js && npm i .
+        cd valve.js && npm i -g .
     - name: Test valve.js
       run: |
         make node-test
