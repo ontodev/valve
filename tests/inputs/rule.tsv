@@ -1,0 +1,8 @@
+table	when column	when condition	then column	then condition	level	description	note
+external	Material Basis	not(blank)	Label	"under(external.Parent, ""disease"")"	ERROR	Only a disease can have a material basis	
+exposure	Exposure Material Reported	blank	Exposure Material ID	blank	ERROR	When the exposure material reported is blank, the exposure material ID must also be blank.	
+exposure	Exposure Material Reported	not(blank)	Exposure Material ID	lookup(external, Label, ID)	ERROR	The exposure material ID must match the exposure material reported.	When exposure_material_reported is not blank, then create a tuple x = (exposure_material_reported, exposure_material_id); generate a list of tuples X for each row in external as (external.label, external.id); then check that x is in X.
+exposure	Disease Reported	blank	Disease Stage Reported	blank	ERROR	When the disease reported is blank, the disease stage must also be blank.	
+exposure	Disease Reported	not(blank)	Disease Ontology ID	lookup(external, Label, ID)	ERROR	The disease ontology ID must match the disease reported.	
+exposure	Exposure Process Reported	"under(external.Parent, ""occurrence of disease"")"	Disease Reported	not(blank)	ERROR	"When the exposure process is ""occurrence of disease"" then the disease reported must be provided."	
+exposure	Disease Reported	"under(external.Parent, ""occurrence of infectious disease"")"	Exposure Material Reported	"lookup(external, Label, ""Material Basis"")"	ERROR	When an infectious disease is reported, the material reported must be the material basis for that disease.	

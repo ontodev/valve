@@ -1,0 +1,10 @@
+datatype	parent	match	level	description	instructions	replace
+string			ERROR	any string		
+blank	string	/^$/	ERROR	a blank value (an empty string)		
+line	string	/[^\n]/	ERROR	a single line of text (no line breaks)	remove line breaks	s/\n/ /g
+trimmed_line	line	/\w.*\w/	ERROR	a line with no leading or trailing whitespace	remove leading and trailing whitespace	s/\s+(.*)\s+/\1/
+label	trimmed_line		ERROR	an ontology term label		
+IRI	trimmed_line	/[^\s]/	ERROR	an Internationalized Resource Identifier	remove whitespace characters	
+prefix	trimmed_line	/\w+/	ERROR	a valid prefix for a CURIE		
+gate	label	/^\w+(\+-)*$/	ERROR	a gate name		
+numeric		/^[0-9]+$/	ERROR	numeric values		
