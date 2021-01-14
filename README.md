@@ -211,11 +211,11 @@ Usage: `tree(column, [table2.column2])`
 
 This function creates a tree structure using the contents of the target column as "parent" values and the contents of `column` (from the same target table) as "child" values. An optional `table2.column2` can be passed as long as `table2.column2` has already been defined as a tree. This means that the current tree will extend the `table2.column2` tree. All "parent" values are required to be in the "child" values, or in the extended tree (if provided).
 
-The `tree` function may only be used as a `condition` in the field table. The tree name which can be referenced later in other `tree` functions and the `under` function is the `table` and `column` pair from the field table, e.g. this creates the tree `foo.bar` with child values form `foo.baz`:
+The `tree` function may only be used as a `condition` in the field table. The tree name which can be referenced later in other `tree` functions and the `under` function is the `table` and `column` pair from the field table, e.g. this creates the tree `foo.bar` with child values from `foo.baz`:
 
 | table | column | condition     |
 | ----- | ------ | ------------- |
-| foo   | bar    | tree(foo.baz) |
+| foo   | bar    | tree(baz) |
 
 ### under
 
