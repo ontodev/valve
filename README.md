@@ -308,7 +308,7 @@ def validate_foo(config, args, table, column, row_idx, value):
 
 valve.validate(
     "inputs/",
-    functions={
+    add_functions={
         "foo": {
             "usage": "foo(string)",
             "check": ["string"],
@@ -388,7 +388,7 @@ def check_foo(config, table, column, args):
 
 valve.validate(
     "inputs/",
-    functions={
+    add_functions={
         "foo": {
             "usage": "foo(string, string)",
             "check": check_foo,
