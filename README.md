@@ -45,7 +45,7 @@ The datatype table can have the following fields (a `*` indicates that it is a r
 * `parent` \*: parent datatype - must exist in the `datatype` column
 * `match`\*: regex match (this column is required but blank cells are allowed)
 * `level` \*: validation fail level when a value does not meet the regex match (info, warn, or error)
-* `description`: brief description of datatype
+* `message`: an [error message](#error-messages)
 * `instructions`: how to fix problems
 * `replace`: regex automatic replacement
 
@@ -61,6 +61,7 @@ The field table requires the following fields (a `*` indicates that it is a requ
 * `table` \*: table name within inputs
 * `column` \*: column name within table
 * `condition` \*: function or datatype to validate
+* `message`: an [error message](#error-messages)
 
 All contents of the `table.column` are validated against the `condition`.
 
@@ -77,11 +78,26 @@ The rule table requires the following fields (a `*` indicates that it is a requi
 * `then column` \*: column name within the table
 * `then condition` \*: datatype or function to validate when "when condition" returns true
 * `level`: validation fail level when the "then condition" fails (info, warn, or error)
-* `description`: description of failure, included in message
+* `message`: an [error message](#error-messages)
 
 If the contents of the `"when table"."when column"` do not pass the `when condition`, then the `then condition` is never run. Failing the `when condition` is not considered a validation failure.
 
 [Example rule table](https://github.com/ontodev/valve.py/blob/main/tests/resources/inputs/rule.tsv)
+
+
+### Error Messages
+
+In each of the configuration tables, you may include the optional `message` column to replace the default error message. Within this message, you can use variables that will be replaced in the output message:
+* `{value}`: the failing value (i.e., if you are using `list`, it will be the value in the list that failed, not the full list)
+* `{table}`: the table name containing the violation
+* `{column}`: the column name containing the violation
+* `{row_idx}`: the row number containing the violation
+* `{condition}`: the condition that failed
+
+For example:
+> '{value}' at {table}:{column} row {row_idx} failed {condition}
+
+Keep in mind that you can use as many or as few variables as you want; not all are required in the message.
 
 ---
 
