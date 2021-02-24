@@ -1,7 +1,8 @@
 table	cell	rule ID	rule	level	message	suggestion
-external	D11	field:7		ERROR	'process' from external.Parent must exist in external.Label	
-external	E7	field:8		ERROR	"'Degue virus' must meet one of: blank, under(external.Parent, ""material entity"")"	
-external	A15	field:5		ERROR	'ONTIE:0003317' must be distinct with value(s) at: external:A16	
-external	A16	field:5		ERROR	'ONTIE:0003317' must be distinct with value(s) at: external:A15	
-exposure	E5	rule:7		ERROR	"because 'occurrence of disease' is 'under(external.Parent, ""occurrence of disease"")', value must not be blank"	
-exposure	B6	rule:4		ERROR	because 'Dengue virus' is 'not(blank)', 'NCBITaxon:11103' must be 'NCBITaxon:12637'	NCBITaxon:12637
+external	D11	field:7	Parent	ERROR	'process' from external.Parent must exist in external.Label	
+external	E7	field:8	Material Basis	ERROR	"'Degue virus' must meet one of: blank, under(external.Parent, ""material entity"")"	
+external	A11	field:5	ID	ERROR	'IE_1' must be of datatype 'numeric'	
+external	A15	field:5	ID	ERROR	'ONTIE:0003317' must be distinct with value(s) at: external:A16	
+external	A16	field:5	ID	ERROR	'ONTIE:0003317' must be distinct with value(s) at: external:A15	
+exposure	E5	rule:7	Disease Reported	ERROR	"because 'occurrence of disease' is 'under(external.Parent, ""occurrence of disease"")', value must not be blank"	
+exposure	B6	rule:4	Exposure Material ID	ERROR	because 'Dengue virus' is 'not(blank)', 'NCBITaxon:11103' must be 'NCBITaxon:12637'	NCBITaxon:12637
