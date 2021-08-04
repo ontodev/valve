@@ -11,6 +11,7 @@ So far we're working on:
 
 - [valve.py](https://github.com/ontodev/valve.py)
 - [valve.js](https://github.com/ontodev/valve.js)
+- [valve.clj](https://github.com/ontodev/valve.clj)
 
 ## Command Line Usage
 
@@ -24,7 +25,7 @@ Each `path` may be a file or a directory. If a directory is passed, VALVE will s
 
 At this time, only TSV and CSV tables are accepted.
 
-The output `-o`/`--output` must be a path to a TSV or CSV file to write validation messages to. The output is formatted based on [COGS message tables](https://github.com/ontodev/cogs#message-tables). An example table can be found [here](https://github.com/ontodev/valve.py/blob/main/tests/resources/errors.tsv).
+The output `-o`/`--output` must be a path to a TSV or CSV file to write validation messages to. The output is formatted based on [COGS message tables](https://github.com/ontodev/cogs#message-tables). An example table can be found [here](/tests/errors.tsv).
 
 ## Configuration Files
 
@@ -40,7 +41,7 @@ These can be passed as individual files to the input, or you can pass a director
 
 Datatypes allow you to define regex patterns for cell values. The datatypes are a hierarchy of types, and when a datatype is provided as a `condition`, all parent values are also checked.
 
-The datatype table can have the following fields (a `*` indicates that it is a required columns):
+The datatype table can have the following fields (a `*` indicates that it is a required column):
 * `datatype` \*: name of datatype - a single word that uses any alphanumeric character or `-` and `_`
 * `parent` \*: parent datatype - must exist in the `datatype` column
 * `match`\*: regex match (this column is required but blank cells are allowed)
@@ -51,13 +52,13 @@ The datatype table can have the following fields (a `*` indicates that it is a r
 
 The regex patterns should be enclosed with forward slashes (e.g., `/^$/` matches blanks). Replacements should be formatted like `perl` replacements (e.g., `s/\n/ /g` replaces newlines with spaces).
 
-[Example datatype table](https://github.com/ontodev/valve.py/blob/main/tests/resources/inputs/datatype.tsv)
+[Example datatype table](/tests/inputs/datatype.tsv)
 
 ### Field Table
 
 The field table allows you to define checks for the contents of columns.
 
-The field table requires the following fields (a `*` indicates that it is a required field):
+The field table can have the following fields (a `*` indicates that it is a required field):
 * `table` \*: table name within inputs
 * `column` \*: column name within table
 * `condition` \*: function or datatype to validate
@@ -65,7 +66,7 @@ The field table requires the following fields (a `*` indicates that it is a requ
 
 All contents of the `table.column` are validated against the `condition`.
 
-[Example field table](https://github.com/ontodev/valve.py/blob/main/tests/resources/inputs/field.tsv)
+[Example field table](/tests/inputs/field.tsv)
 
 ### Rule Table
 
@@ -82,7 +83,7 @@ The rule table requires the following fields (a `*` indicates that it is a requi
 
 If the contents of the `"when table"."when column"` do not pass the `when condition`, then the `then condition` is never run. Failing the `when condition` is not considered a validation failure.
 
-[Example rule table](https://github.com/ontodev/valve.py/blob/main/tests/resources/inputs/rule.tsv)
+[Example rule table](/tests/inputs/rule.tsv)
 
 
 ### Error Messages
@@ -276,7 +277,7 @@ const valve = require("valve-js");
 ```
 
 <!-- TODO: add link to auto-generated docs -->
-The main method is `valve.validate` ([py](https://github.com/ontodev/valve.py/blob/main/valve/valve.py#L1470), [js]()), which accepts either a list of input paths (files or directories) along with some optional parameters:
+The main method is `valve.validate` ([py](https://github.com/ontodev/valve.py), [js](https://github.com/ontodev/valve.js), [clj](https://github.com/ontodev/valve.clj)), which accepts either a list of input paths (files or directories) along with some optional parameters (note that the snake case version of the parameter name is used for python, and the camel case version for javascript):
 * `distinct_messages`/`distinctMessages`: a path to a directory to place distinct messages, or null if you do not want distinct outputs (default: `None`/`null`)
 * `row_start`/`rowStart`: the row number to start validating input tables on (default: `2`)
 * `add_functions`/`addFunctions`: an object containing additional custom functions (default: `None`/`null`)
@@ -285,12 +286,12 @@ The main method is `valve.validate` ([py](https://github.com/ontodev/valve.py/bl
 
 ### Custom Functions
 
-You may call `valve.validate` with an optional `functions={...}`/`addFunctions` argument. The dictionary value should be in the format of function name (for use in rule and field tables) -> details dict. The details dict includes the following items:
+You may call `valve.validate` with an optional `add_functions`/`addFunctions` argument, which takes a dictionary mapping function names to further dictionaries which define the following parameters:
 * `usage`: usage text (optional)
 * `validate`: the function to run for VALVE validation
 * `check`: the [expected structure](#checking-with-a-list) of the arguments OR a custom [check function](#checking-with-a-function)
 
-The function name should not collide with any [builtin functions](https://github.com/ontodev/valve/blob/main/README.md#functions). The function must be defined in your file with the following required parameters in this order, even if they are not all used:
+The specified functions' names should not collide with the names of any [builtin functions](#functions), and validator functions for all specified functions must be defined in the calling code with the following required parameters in this order, even if they are not all used:
 
 1. `config`: VALVE configuration dictionary
 2. `args`: parsed (via `valve.parse(str)`) arguments from the function
@@ -299,12 +300,12 @@ The function name should not collide with any [builtin functions](https://github
 5. `row_idx`/`rowIdx`: row index containing value
 6. `value`: value to run the function on
 
-The function should return a list of messages (empty on success). The messages are dictionaries with the following keys:
+The validator for a specified function should also be defined to return a list of messages (empty on success). The messages are dictionaries with the following keys:
 * `table`: table name (no parent directories or extension)
-* `cell`: A1 format of cell location - you can use `valve.idx_to_a1` (py) or `valve.idxToA1` (js) to get this\*
+* `cell`: A1 format of cell location - you can use `valve.idx_to_a1` (py) or `valve.idxToA1` (js) to get this<sup>\*</sup>
 * `message`: detailed error message
 
-\* When getting the A1 format of the location, note that the `row_idx`/`rowIdx` always starts at zero, without headers (or any skipped rows) included in the list of rows. You must add `row_start`/`rowStart` to this to get the correct row number.
+<sup>\* When getting the A1 format of the location, note that the `row_idx`/`rowIdx` always starts at zero, without headers (or any skipped rows) included in the list of rows. You must add `row_start`/`rowStart` to this to get the correct row number.</sup>
 
 You may also include a `suggestion` key if you want to provide a suggested replacement value.
 
