@@ -85,43 +85,145 @@ Imagine that we have the row:
 #+begin_example
  table | column | condition
 --------------------------------------------------------------------------
- foo   | bar    | split("," 2, goo.bar1, goo.bar2)
+ foo   | bar    | split("," 3, goo.bar1, goo.bar2, goo.bar3)
 #+end_example
 
 And suppose the contents of the foo table are:
 #+begin_example
  bar
-------------
-alpha,beta
-gamma,delta
+----------------
+alpha,beta,gamma
+delta,epsilon,psi
+alpha,beta,nu
 #+end_example
 
 while the contents of the goo table are:
 #+begin_example
- bar1  | bar2
--------------
- alpha | beta
- gamma | delta
+ bar1  | bar2    | bar3
+------------------------
+ alpha | beta    | gamma
+ delta | epsilon | psi
 #+end_example
 
 We could, for instance, generate a temp table that looks something like this:
 #+begin_src sql
-WITH RECURSIVE split(bar, str) AS (
-    SELECT '', bar||','
+WITH RECURSIVE split(reference, id, bar, str) AS (
+    SELECT bar, 0, '', bar||','
     FROM foo
-    UNION ALL
-    SELECT
+    UNION ALL SELECT
+    reference,
+    id + 1,
     substr(str, 0, instr(str, ',')),
     substr(str, instr(str, ',')+1)
     FROM split
     WHERE str!=''
 )
-SELECT bar
+SELECT reference, id, bar
 FROM split
-WHERE bar != '';
+WHERE bar != ''
+ORDER BY reference;
 #+end_src
 
+The result would then be:
+#+begin_example
+ reference         | id | bar
+-------------------------------
+ alpha,beta,gamma  | 1  | alpha
+ alpha,beta,gamma  | 2  | beta
+ alpha,beta,gamma  | 3  | gamma
+ delta,epsilon,psi | 1  | delta
+ delta,epsilon,psi | 2  | epsilon
+ delta,epsilon,psi | 3  | psi
+ alpha,beta,nu     | 1  | alpha
+ alpha,beta,nu     | 2  | beta
+ alpha,beta,nu     | 3  | nu
+#+end_example
 
+To validate that the count is correct we could either use:
+ ~select reference, count(1) from result group by reference;~
+or
+ ~select reference, max(id) from result group by reference;~
+
+#+begin_src sql
+select
+ reference,
+ count(1) = 3
+from result
+group by reference;
+#+end_src
+
+To match the columns from `goo` with the rows from `result` we could use the
+`id` column from `result`.
+
+#+begin_src sql
+select
+ reference,
+ bar,
+ bar in (select bar3 from goo)
+from result
+where id = 3;
+#+end_src
+
+#+begin_src sql
+with split(reference, id, bar) as (
+       with recursive split(reference, id, bar, str) as (
+         select
+           bar,
+           0,
+           '',
+           bar||','
+         from foo
+         union all
+         select
+           reference,
+           id + 1,
+           substr(str, 0, instr(str, ',')),
+           substr(str, instr(str, ',')+1)
+         from split
+         where str!=''
+       )
+       select reference, id, bar
+       from split
+       where bar != ''
+     ),
+     count_valid(reference, valid) as (
+       select
+         reference,
+         count(1) = 3
+       from result
+       group by reference
+     ),
+     col1_valid(reference, valid) as (
+       select
+         reference,
+         bar in (select bar1 from goo)
+       from result
+       where id = 1
+     ),
+     col2_valid(reference, valid) as (
+       select
+         reference,
+         bar in (select bar2 from goo)
+       from result
+       where id = 2
+     ),
+     col3_valid(reference, valid) as (
+       select
+         reference,
+         bar in (select bar3 from goo)
+       from result
+       where id = 3
+     )
+  select
+    count_valid.reference,
+    col1_valid.valid as col1_valid,
+    col2_valid.valid as col2_valid,
+    col3_valid.valid as col3_valid
+  from count_valid, col1_valid, col2_valid, col3_valid
+  where col1_valid.reference = count_valid.reference
+    and col2_valid.reference = count_valid.reference
+    and col3_valid.reference = count_valid.reference;
+#+end_src
 
 * sub
 ===============================================================================
