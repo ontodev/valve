@@ -1,26 +1,77 @@
 #+title:Converting VALVE functions into SQL
 
 * Notes:
-  - let's not worry about parents for now; e.g., when confronted with a
-    function like any(label, trimmed_line), do not consider the parents of
-    label and trimmed_line.
-
   - (from James): To handle the nested conditions, I expect the general
     strategy will be to use multiple Common Table Expressions (CTEs): WITH
     first AS (...), second AS (...), third AS (...) SELECT ... . I've never
     done that, but it should work: https://www.sqlite.org/lang_with.html
 
 * any
-TBD
+This seems to be reasonably straightforward and can be implemented, it seems,
+with a simple ~OR~.
+
+It will get more complicated when the expressions referred to are themselves
+functions, but that complication has nothing to do with ~any~ per se, but with
+the general issue of how to compose functions in these SQL queries. James'
+suggestion (see the *Notes* section above) should work.
+
+The other complication, which is also general and applies to all functions, is
+when an expression is a datatype that has a parent. In that case we will need
+to generate queries for the original datatype and also for its ancestors.
 
 * concat
 TBD
 
 * distinct
-TBD
+
+Usage: ~distinct(expr, [table.column, ...])~
+
+This function validates that the contents of the target column are all
+distinct. If other table.column pairs (one or more) are provided after the
+expr, the values of the target column must also be distinct with all those
+values. The expr is either a datatype or another function to perform on the
+contents of the column.
+
+Examples:
+--
+#+begin_example
+ table    | column | condition
+--------------------------------------------------------------------------
+ external | ID     | "distinct(concat(in(prefix.prefix), "":"", numeric))"
+#+end_example
+
+The values in the ~`external.ID`~ column, when transformed in accordance with
+the ~concat~ function, must be distinct.
+
+#+begin_example
+ table    | column | condition
+------------------------------------
+ external | ID     | distinct(label)
+#+end_example
+
+The values in the ~`external.ID`~ column must be a ~label~ and they must be
+distinct.
+
+#+begin_example
+ table    | column | condition
+--------------------------------------------------
+ external | ID     | distinct(label, table.column)
+#+end_example
+
+The values in the ~`external.ID`~ column must be a ~label~, must not be one of
+the values in ~table.column~ and must be distinct.
+
+- Verifying that the target column is a particular datatype should be
+  straightforward.
+
+- Verifying that the target column corresponds to the result of calling a
+  particular function on it should be straightforward.
+
+- Regarding the optional ~table.column~, this should be a simple matter of
+  adding a ~AND NOT IN `table`.`column`~ to the ~WHERE~ clause.
 
 * in
-Usage: in(str-or-column, [str-or-column, ...])
+Usage: ~in(str-or-column, [str-or-column, ...])~
 
 Suppose we have the following rows in the field table:
 
@@ -45,10 +96,10 @@ the `external`.`Parent` column.
 This function seems pretty straightforward to implement.
 
 1.
-select "dengue hemorrhagic fever", "disease B";
+~select "dengue hemorrhagic fever", "disease B";~
 
 2.
-select Label from external;
+~select Label from external;~
 
 3. 
 #+begin_src 
@@ -61,7 +112,60 @@ select distinct label from labels;
 #+end_src
 
 * list
-TBD
+~Usage: list("char", expr)~
+
+This function splits the contents of the target column on the char (e.g, ~|~)
+and then checks expr on each sub-value. The expr is either a datatype or
+another function to perform. If one sub-value fails the expr check, this
+function fails.
+
+Consider:
+
+#+begin_example
+ table    | column    | condition
+-------------------------------------------
+ plugh    | xyzzy     | list(";", label)
+#+end_example
+
+Then we need to split the contents of ~`my_table`.`my_column`~ using ~;~, and
+then verify that each token is of datatype ~label~.
+
+To verify that a token is of datatype ~label~ we need to match it against the
+regex for ~label~ (which we can retrieve from the ~datatype~ table).
+
+The case of verifying against a function belongs to the problem of composing
+functions, which is a general problem that has nothing to do with ~list~ per
+se. Similarly for parents of datatypes.
+
+So imagine the ~plugh~ table has the following contents:
+
+#+begin_example
+ xyzzy
+---------------------
+ label1;label2;label3
+#+end_example
+
+From the ~datatype~ table, we see that a ~label~ is a ~trimmed_line~, which
+means that it must contain no leading or trailing spaces. So, what we need to
+do is break up ~label1;label2;label3~ using ~;~ and then make sure that each
+token is a ~trimmed_line~ in the above sense.
+
+#+begin_src sql
+with recursive split(xyzzy, str) as (
+    select
+      '',
+      xyzzy||';'
+    from plugh
+    union all
+    select
+      substr(str, 0, instr(str, ';')),
+      substr(str, instr(str, ';')+1)
+    from split where str != ''
+) 
+select xyzzy, regexp_matches(xyzzy, '^\w.*\w$') as valid_trimmed_line
+from split
+where xyzzy != '';
+#+end_src
 
 * lookup
 This function is confusing and I'm not sure that I understand it. That said, it
@@ -69,7 +173,9 @@ _seems_ like it will be straightforward to implement since it appears to be
 just a simple select.
 
 * not
-This seems pretty straightforward.
+This seems pretty straightforward. The complications arising from composition
+and/or parents are general complications that have nothing to do with ~not~ per
+se.
 
 * split
 Imagine that we have the row:
@@ -430,3 +536,11 @@ with recursive tree(`child`, `parent`) as (
 )
 select `child` from `tree`;
 #+end_src
+
+* SQL queries for functions that call other functions (composition)
+
+TBD
+
+* SQL queries for functions on datatypes that have parents
+
+TBD
