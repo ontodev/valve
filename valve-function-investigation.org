@@ -1,7 +1,6 @@
 #+title:Converting VALVE functions into SQL
 
 * Notes:
-===============================================================================
   - let's not worry about parents for now; e.g., when confronted with a
     function like any(label, trimmed_line), do not consider the parents of
     label and trimmed_line.
@@ -12,19 +11,15 @@
     done that, but it should work: https://www.sqlite.org/lang_with.html
 
 * any
-===============================================================================
 TBD
 
 * concat
-===============================================================================
 TBD
 
 * distinct
-===============================================================================
 TBD
 
 * in
-===============================================================================
 Usage: in(str-or-column, [str-or-column, ...])
 
 Suppose we have the following rows in the field table:
@@ -66,21 +61,17 @@ select distinct label from labels;
 #+end_src
 
 * list
-===============================================================================
 TBD
 
 * lookup
-===============================================================================
 This function is confusing and I'm not sure that I understand it. That said, it
 _seems_ like it will be straightforward to implement since it appears to be
 just a simple select.
 
 * not
-===============================================================================
 This seems pretty straightforward.
 
 * split
-===============================================================================
 Imagine that we have the row:
 #+begin_example
  table | column | condition
@@ -240,11 +231,9 @@ with split(reference, id, bar) as (
 #+end_src
 
 * sub
-===============================================================================
 TBD
 
 * tree
-===============================================================================
 Consider the following row from the `field` table:
 
 #+begin_example
@@ -364,7 +353,6 @@ that all the values of the external.Parent column are in either:
   every time?
 
 * under
-===============================================================================
 Assume that we have generated a tree in accordance with `tree` (see
 above). Let's assume that we have populated the following table which
 corresponds to `external.Parent`.
