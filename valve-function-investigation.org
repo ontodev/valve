@@ -95,6 +95,8 @@ And suppose the contents of the foo table are:
 alpha,beta,gamma
 delta,epsilon,psi
 alpha,beta,nu
+eta,beta,lambda,omega
+xi
 #+end_example
 
 while the contents of the goo table are:
@@ -164,6 +166,17 @@ from result
 where id = 3;
 #+end_src
 
+Here is a single query to get all of the info. Note that it does not return
+information in the case where you have a row in the `foo` table that has _less_
+than the required number of entries, e.g.,
+
+ bar
+-------
+ xi,chi
+
+I am sure this is just because below we are using an inner rather than an outer
+join, so it should be easily fixable.
+
 #+begin_src sql
 with split(reference, id, bar) as (
        with recursive split(reference, id, bar, str) as (
@@ -190,32 +203,33 @@ with split(reference, id, bar) as (
        select
          reference,
          count(1) = 3
-       from result
+       from split
        group by reference
      ),
      col1_valid(reference, valid) as (
        select
          reference,
          bar in (select bar1 from goo)
-       from result
+       from split
        where id = 1
      ),
      col2_valid(reference, valid) as (
        select
          reference,
          bar in (select bar2 from goo)
-       from result
+       from split
        where id = 2
      ),
      col3_valid(reference, valid) as (
        select
          reference,
          bar in (select bar3 from goo)
-       from result
+       from split
        where id = 3
      )
   select
     count_valid.reference,
+    count_valid.valid as count_valid,
     col1_valid.valid as col1_valid,
     col2_valid.valid as col2_valid,
     col3_valid.valid as col3_valid
