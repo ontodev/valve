@@ -1,0 +1,11 @@
+.mode tabs
+.import "tests/inputs/exposure.tsv" "exposure"
+.import "tests/inputs/cell.tsv" "cell"
+.import "tests/inputs/cytometry.tsv" "cytometry"
+.import "tests/inputs/datatype.tsv" "datatype"
+.import "tests/inputs/exposure.tsv" "exposure"
+.import "tests/inputs/external.tsv" "external"
+.import "tests/inputs/field.tsv" "field"
+.import "tests/inputs/prefix.tsv" "prefix"
+.import "tests/inputs/protein.tsv" "protein"
+.import "tests/inputs/rule.tsv" "rule"

@@ -1,0 +1,326 @@
+#+title:Converting VALVE functions into SQL
+
+* Notes:
+===============================================================================
+  - let's not worry about parents for now; e.g., when confronted with a
+    function like any(label, trimmed_line), do not consider the parents of
+    label and trimmed_line.
+
+  - (from James): To handle the nested conditions, I expect the general
+    strategy will be to use multiple Common Table Expressions (CTEs): WITH
+    first AS (...), second AS (...), third AS (...) SELECT ... . I've never
+    done that, but it should work: https://www.sqlite.org/lang_with.html
+
+* any
+===============================================================================
+TBD
+
+* concat
+===============================================================================
+TBD
+
+* distinct
+===============================================================================
+TBD
+
+* in
+===============================================================================
+Usage: in(str-or-column, [str-or-column, ...])
+
+Suppose we have the following rows in the field table:
+
+#+begin_example
+table    | column            | condition                                   | note
+---------------------------------------------------------------------------------
+exposure | Disease Reported  | in("dengue hemorrhagic fever", "disease B") |
+exposure | Exposure Material | in(external.Label)                          |
+exposure | Exposure Material | in(external.Label, external.Parent)         |
+#+end_example
+
+The first row says that all values in the column: `exposure`.`Disease Reported`
+should be either "dengue hemorrhagic fever" or "disease B".
+
+The second row says that all values in column: `exposure`.`Disease Reported`
+should match one of the values in the `external`.`Label` column.
+
+The second row says that all values in column: `exposure`.`Disease Reported`
+should match either something in the `external`.`Label` column or something in
+the `external`.`Parent` column.
+
+This function seems pretty straightforward to implement.
+
+1.
+select "dengue hemorrhagic fever", "disease B";
+
+2.
+select Label from external;
+
+3. 
+#+begin_src 
+with labels(label) as (
+  select Label from external
+  union
+  select Parent from external
+)
+select distinct label from labels;
+#+end_src
+
+* list
+===============================================================================
+TBD
+
+* lookup
+===============================================================================
+This function is confusing and I'm not sure that I understand it. That said, it
+_seems_ like it will be straightforward to implement since it appears to be
+just a simple select.
+
+* not
+===============================================================================
+This seems pretty straightforward.
+
+* split
+===============================================================================
+Imagine that we have the row:
+#+begin_example
+ table | column | condition
+--------------------------------------------------------------------------
+ foo   | bar    | split("," 2, goo.bar1, goo.bar2)
+#+end_example
+
+And suppose the contents of the foo table are:
+#+begin_example
+ bar
+------------
+alpha,beta
+gamma,delta
+#+end_example
+
+while the contents of the goo table are:
+#+begin_example
+ bar1  | bar2
+-------------
+ alpha | beta
+ gamma | delta
+#+end_example
+
+We could, for instance, generate a temp table that looks something like this:
+#+begin_src sql
+WITH RECURSIVE split(bar, str) AS (
+    SELECT '', bar||','
+    FROM foo
+    UNION ALL
+    SELECT
+    substr(str, 0, instr(str, ',')),
+    substr(str, instr(str, ',')+1)
+    FROM split
+    WHERE str!=''
+)
+SELECT bar
+FROM split
+WHERE bar != '';
+#+end_src
+
+
+
+* sub
+===============================================================================
+TBD
+
+* tree
+===============================================================================
+Consider the following row from the `field` table:
+
+#+begin_example
+   table  | column | condition
+----------------------------------
+ external | Parent | tree(Label)
+#+end_example
+
+This says that the value of the Parent column in the table external must be
+contained within the tree: tree(Label) to which is assigned the name external
+Parent. The children of this tree are taken from the column: external.Label and
+the parents of the tree are taken from the column external.Parent.
+
+That is, to generate the tree, look into the table `external`, and for each
+value of the column `Label` (each "child") associate the "parent" indicated in
+the column `Parent` of that row. In this example this evaluates to:
+
+#+begin_src clojure
+{:external.Parent
+ {:'administering substance in vivo' #{"exposure process"},
+  :'organism' #{"material entity"},
+  :'occurrence of infectious disease' #{"occurrence of disease"},
+  :'dengue hemorrhagic fever' #{"disease"},
+  :'occurrence of disease' #{"exposure process"},
+  :'Chronic' #{"disease stage"},
+  :'exposure to substance without evidence for disease' #{"exposure process"},
+  :'occurrence of cancer' #{"occurrence of disease"},
+  :'Hepacivirus C' #{"organism"},
+  :'exposure process' #{"process"},
+  :'disease stage' #{},
+  :'material entity' #{},
+  :'disease' #{},
+  :'Acute/Recent onset' #{"disease stage"},
+  :'Dengue virus' #{"organism"}}}
+#+end_src
+
+More generically:
+
+#+begin_example
+   table    | column | condition
+----------------------------------
+ my_table   | col_1  | tree(col_2)
+#+end_example
+
+In this case a tree named my_table.col_1 whose children are taken from the
+contents of my_table.col_2 and whose associated parents are taken from
+my_table.col_1.
+
+As far as validation goes, when a rown like this is encountered in the `field`
+table, we will need to validate that all instances of `col_1` in `my_table` are
+in the tree tree(col_2).
+
+Note that, within my_table, the "parent" column col_1 could in principle
+contain multiple parents split by a split character (e.g, "|").
+
+SQL code to generate tree(Label) for external.Parent (adapted from
+https://www.vivekkalyan.com/splitting-comma-seperated-fields-sqlite):
+
+#+begin_src sql
+WITH RECURSIVE split(`Label`, `splitParent`, `str`) AS (
+    -- We need to exclude rows with empty parents otherwise the split function
+    --  will choke:
+    SELECT
+      `Label`,
+      '',
+      `Parent`||','
+    FROM `external`
+    WHERE `Parent` != ''
+    UNION ALL
+    SELECT
+      `Label`,
+      substr(`str`, 0, instr(`str`, ',')),
+      substr(`str`, instr(`str`, ',')+1)
+    FROM `split`
+    WHERE `str` != ''
+) 
+SELECT DISTINCT
+  `Label`,
+  `splitParent`
+FROM `split`
+WHERE `splitParent` != ''
+UNION
+-- Add back the empty parents:
+SELECT
+  `Label`,
+  `Parent`
+FROM `external`
+WHERE `Parent` = '' 
+ORDER BY `Label`;
+#+end_src
+
+Note that the tree() function accepts an optional parameter specifying another
+tree name. E.g.,
+
+#+begin_example
+   table  | column | condition
+----------------------------------
+ external | Parent | tree(Label, table_name.column_name)
+#+end_example
+
+It is assumed that the tree table_name.column_name has already been
+defined. Presumably the SQL will have been generated similarly to above when
+that tree has been defined. In terms of validation we will just have to check
+that all the values of the external.Parent column are in either:
+
+  external.Parent (a tree name) := tree(Label)
+
+  or
+
+  table_name.column_name (a tree name) := tree(whatever)
+
+*Questions*
+
+- In valve.clj we actually generate maps corresponding to trees and store them
+  in `config`. Do we want to do something similar, i.e., create a table for
+  them in Sqlite? Or do we want to generate them on the fly in a temp table
+  every time?
+
+* under
+===============================================================================
+Assume that we have generated a tree in accordance with `tree` (see
+above). Let's assume that we have populated the following table which
+corresponds to `external.Parent`.
+
+*Note* that I have added an extra parent ('disease stage') to 'dengue
+hemorrhagic fever' - just so that we can have a case of multiple parents to
+play with.
+
+*Note also* that we can either store this table permanently in the sqlite db or
+generate it on the fly as a temp table each time. Nothing below assumes either
+one of these.
+
+#+begin_example
+child                                              | parent
+------------------------------------------------------------------------------
+Acute/Recent onset                                 | disease stage
+Chronic                                            | disease stage
+Dengue virus                                       | organism
+Hepacivirus C                                      | organism
+administering substance in vivo                    | exposure process
+dengue hemorrhagic fever                           | disease
+dengue hemorrhagic fever                           | disease stage
+disease                                            |
+disease stage                                      |
+exposure process                                   | process
+exposure to substance without evidence for disease | exposure process
+material entity                                    |
+occurrence of cancer                               | occurrence of disease
+occurrence of disease                              | exposure process
+occurrence of infectious disease                   | occurrence of disease
+organism                                           | material entity
+#+end_example
+
+The syntax of `under` is as follows: under(table.column, "top level",
+[direct=true])
+
+We will need to look for all the descendants of "top level" in the tree. In other words what's
+required is a reverse search. For instance suppose we specify under(table.column, 'material
+entity'). The children of material entity are:
+- organism (direct)
+- Dengue virus (indirect)
+- Hepacivirus C (indirect)
+
+Suppose we have:
+
+#+begin_example
+table    | column                     | condition
+---------------------------------------------------------------------------------
+exposure | Exposure Material Reported | under(external.Parent, "material entity")
+#+end_example
+
+Then what we need to do is to validate that the contentx of the Exposure Material Reported column
+in the exposure table are all underneath "material entity" in the tree associated with
+external.Parent (the one described above).
+
+The direct = true case:
+#+begin_src sql
+select child
+from external_parent_tree
+where parent='material entity';
+#+end_src
+
+The direct != true case:
+#+begin_src sql
+with recursive tree(`child`, `parent`) as (
+  select `child`, `parent`
+  from `external_parent_tree`
+  where `parent` = 'material entity'
+  union all
+  select `descendant`.`child`, `descendant`.`parent`
+  from `external_parent_tree` as `descendant`
+  join `tree` as `ancestor` on `ancestor`.`child` = `descendant`.`parent`
+)
+select `child` from `tree`;
+#+end_src
