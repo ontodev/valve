@@ -161,9 +161,11 @@ Here is a single query to get all of the info. Note that it does not return
 information in the case where you have a row in the `foo` table that has _less_
 than the required number of entries, e.g.,
 
+#+begin_example
  bar
 -------
  xi,chi
+#+end_example
 
 I am sure this is just because below we are using an inner rather than an outer
 join, so it should be easily fixable.
