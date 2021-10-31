@@ -24,24 +24,25 @@ TBD
 
 * distinct
 
+_Documentation from the VALVE README_
 Usage: ~distinct(expr, [table.column, ...])~
 
 This function validates that the contents of the target column are all
-distinct. If other table.column pairs (one or more) are provided after the
-expr, the values of the target column must also be distinct with all those
-values. The expr is either a datatype or another function to perform on the
+distinct. If other ~table.column~ pairs (one or more) are provided after the
+~expr~, the values of the target column must also be distinct with all those
+values. The ~expr~ is either a datatype or another function to perform on the
 contents of the column.
 
-Examples:
---
+_Examples:_
+
 #+begin_example
  table    | column | condition
 --------------------------------------------------------------------------
- external | ID     | "distinct(concat(in(prefix.prefix), "":"", numeric))"
+ external | ID     | distinct(concat(in(prefix.prefix), ":", numeric))
 #+end_example
 
-The values in the ~`external.ID`~ column, when transformed in accordance with
-the ~concat~ function, must be distinct.
+*Interpretation:* The values in the ~`external.ID`~ column, when transformed in
+accordance with the ~concat~ function, must be distinct.
 
 #+begin_example
  table    | column | condition
@@ -49,8 +50,8 @@ the ~concat~ function, must be distinct.
  external | ID     | distinct(label)
 #+end_example
 
-The values in the ~`external.ID`~ column must be a ~label~ and they must be
-distinct.
+*Interpretation:* The values in the ~`external.ID`~ column must be a ~label~
+and they must be distinct.
 
 #+begin_example
  table    | column | condition
@@ -58,20 +59,25 @@ distinct.
  external | ID     | distinct(label, table.column)
 #+end_example
 
-The values in the ~`external.ID`~ column must be a ~label~, must not be one of
-the values in ~table.column~ and must be distinct.
+*Interpretation:* The values in the ~`external.ID`~ column must be a ~label~,
+must not be one of the values in ~table.column~ and must be distinct.
 
 - Verifying that the target column is a particular datatype should be
   straightforward.
 
 - Verifying that the target column corresponds to the result of calling a
-  particular function on it should be straightforward.
+  particular function on it should be straightforward (i.e., implementing
+  composition (see below) may turn out to be tricky, but there is no added
+  trickiness associated with validating that ~`external`.`ID`~ corresponds to
+  the result of calling that function.
 
-- Regarding the optional ~table.column~, this should be a simple matter of
-  adding a ~AND NOT IN `table`.`column`~ to the ~WHERE~ clause.
+- Regarding the optional ~table.column~, this seems like it should be a simple
+  matter of adding a ~AND NOT IN `table`.`column`~ to the ~WHERE~ clause.
 
 * in
 Usage: ~in(str-or-column, [str-or-column, ...])~
+
+_Interpretation_
 
 Suppose we have the following rows in the field table:
 
@@ -83,23 +89,24 @@ exposure | Exposure Material | in(external.Label)                          |
 exposure | Exposure Material | in(external.Label, external.Parent)         |
 #+end_example
 
-The first row says that all values in the column: `exposure`.`Disease Reported`
-should be either "dengue hemorrhagic fever" or "disease B".
+The first row says that all values in the column:
+ ~`exposure`.`Disease Reported`~ should be either "dengue hemorrhagic fever" or
+ "disease B".
 
-The second row says that all values in column: `exposure`.`Disease Reported`
-should match one of the values in the `external`.`Label` column.
+The second row says that all values in column: ~`exposure`.`Disease Reported`~
+should match one of the values in the ~`external`.`Label`~ column.
 
-The second row says that all values in column: `exposure`.`Disease Reported`
-should match either something in the `external`.`Label` column or something in
-the `external`.`Parent` column.
+The second row says that all values in column: ~`exposure`.`Disease Reported`~
+should match either something in the ~`external`.`Label`~ column or something
+in the ~`external`.`Parent`~ column.
+
+_Implementation_
 
 This function seems pretty straightforward to implement.
 
-1.
-~select "dengue hemorrhagic fever", "disease B";~
+1. ~select "dengue hemorrhagic fever", "disease B";~
 
-2.
-~select Label from external;~
+2. ~select Label from external;~
 
 3. 
 #+begin_src 
@@ -112,12 +119,17 @@ select distinct label from labels;
 #+end_src
 
 * list
+
+_Documentation from VALVE README_
+
 ~Usage: list("char", expr)~
 
 This function splits the contents of the target column on the char (e.g, ~|~)
 and then checks expr on each sub-value. The expr is either a datatype or
 another function to perform. If one sub-value fails the expr check, this
 function fails.
+
+_Interpretation_
 
 Consider:
 
@@ -127,7 +139,7 @@ Consider:
  plugh    | xyzzy     | list(";", label)
 #+end_example
 
-Then we need to split the contents of ~`my_table`.`my_column`~ using ~;~, and
+Here we need to split the contents of ~`my_table`.`my_column`~ using ~;~, and
 then verify that each token is of datatype ~label~.
 
 To verify that a token is of datatype ~label~ we need to match it against the
@@ -137,7 +149,9 @@ The case of verifying against a function belongs to the problem of composing
 functions, which is a general problem that has nothing to do with ~list~ per
 se. Similarly for parents of datatypes.
 
-So imagine the ~plugh~ table has the following contents:
+_Example_
+
+Imagine the ~plugh~ table has the following contents:
 
 #+begin_example
  xyzzy
@@ -169,7 +183,7 @@ where xyzzy != '';
 
 * lookup
 This function is confusing and I'm not sure that I understand it. That said, it
-_seems_ like it will be straightforward to implement since it appears to be
+/seems/ like it will be straightforward to implement since it appears to be
 just a simple select.
 
 * not
@@ -178,6 +192,7 @@ and/or parents are general complications that have nothing to do with ~not~ per
 se.
 
 * split
+
 Imagine that we have the row:
 #+begin_example
  table | column | condition
@@ -185,7 +200,7 @@ Imagine that we have the row:
  foo   | bar    | split("," 3, goo.bar1, goo.bar2, goo.bar3)
 #+end_example
 
-And suppose the contents of the foo table are:
+And suppose the contents of the ~foo~ table are:
 #+begin_example
  bar
 ----------------
@@ -193,10 +208,10 @@ alpha,beta,gamma
 delta,epsilon,psi
 alpha,beta,nu
 eta,beta,lambda,omega
-xi
+xi,beta
 #+end_example
 
-while the contents of the goo table are:
+while the contents of the ~goo~ table are:
 #+begin_example
  bar1  | bar2    | bar3
 ------------------------
@@ -225,24 +240,27 @@ ORDER BY reference;
 
 The result would then be:
 #+begin_example
- reference         | id | bar
--------------------------------
- alpha,beta,gamma  | 1  | alpha
- alpha,beta,gamma  | 2  | beta
- alpha,beta,gamma  | 3  | gamma
- delta,epsilon,psi | 1  | delta
- delta,epsilon,psi | 2  | epsilon
- delta,epsilon,psi | 3  | psi
- alpha,beta,nu     | 1  | alpha
- alpha,beta,nu     | 2  | beta
- alpha,beta,nu     | 3  | nu
+ reference             | id | bar
+-------------------------------------
+ alpha,beta,gamma      | 1  | alpha
+ alpha,beta,gamma      | 2  | beta
+ alpha,beta,gamma      | 3  | gamma
+ alpha,beta,nu         | 1  | alpha
+ alpha,beta,nu         | 2  | beta
+ alpha,beta,nu         | 3  | nu
+ delta,epsilon,psi     | 1  | delta
+ delta,epsilon,psi     | 2  | epsilon
+ delta,epsilon,psi     | 3  | psi
+ eta,beta,lambda,omega | 1  | eta
+ eta,beta,lambda,omega | 2  | beta
+ eta,beta,lambda,omega | 3  | lambda
+ eta,beta,lambda,omega | 4  | omega
+ xi,beta               | 1  | xi
+ xi,beta               | 2  | beta
 #+end_example
 
-To validate that the count is correct we could either use:
- ~select reference, count(1) from result group by reference;~
-or
- ~select reference, max(id) from result group by reference;~
-
+To display which references in ~bar~ have valid a count (which in our example
+is 3):
 #+begin_src sql
 select
  reference,
@@ -251,8 +269,8 @@ from result
 group by reference;
 #+end_src
 
-To match the columns from `goo` with the rows from `result` we could use the
-`id` column from `result`.
+To match the columns from ~`goo`~ with the rows from ~`result`~ we could use the
+~`id`~ column from ~`result`~.
 
 #+begin_src sql
 select
@@ -260,21 +278,10 @@ select
  bar,
  bar in (select bar3 from goo)
 from result
-where id = 3;
+where id = <id>;
 #+end_src
 
-Here is a single query to get all of the info. Note that it does not return
-information in the case where you have a row in the `foo` table that has _less_
-than the required number of entries, e.g.,
-
-#+begin_example
- bar
--------
- xi,chi
-#+end_example
-
-I am sure this is just because below we are using an inner rather than an outer
-join, so it should be easily fixable.
+_Here is a single query to get all of the info:_
 
 #+begin_src sql
 with split(reference, id, bar) as (
@@ -332,17 +339,28 @@ with split(reference, id, bar) as (
     col1_valid.valid as col1_valid,
     col2_valid.valid as col2_valid,
     col3_valid.valid as col3_valid
-  from count_valid, col1_valid, col2_valid, col3_valid
-  where col1_valid.reference = count_valid.reference
-    and col2_valid.reference = count_valid.reference
-    and col3_valid.reference = count_valid.reference;
+  from count_valid
+    left join col1_valid on col1_valid.reference = count_valid.reference
+    left join col2_valid on col2_valid.reference = count_valid.reference
+    left join col3_valid on col3_valid.reference = count_valid.reference;
 #+end_src
+
+The result is:
+#+begin_example
+ reference             |count_valid |col1_valid | col2_valid | col3_valid
+--------------------------------------------------------------------------
+ alpha,beta,gamma      | 1          | 1         | 1          | 1
+ alpha,beta,nu         | 1          | 1         | 1          | 0
+ delta,epsilon,psi     | 1          | 1         | 1          | 1
+ eta,beta,lambda,omega | 0          | 0         | 1          | 0
+ xi,beta               | 0          | 0         | 1          | null
+#+end_example
 
 * sub
 TBD
 
 * tree
-Consider the following row from the `field` table:
+Consider the following row from the ~field~ table:
 
 #+begin_example
    table  | column | condition
@@ -350,14 +368,15 @@ Consider the following row from the `field` table:
  external | Parent | tree(Label)
 #+end_example
 
-This says that the value of the Parent column in the table external must be
-contained within the tree: tree(Label) to which is assigned the name external
-Parent. The children of this tree are taken from the column: external.Label and
-the parents of the tree are taken from the column external.Parent.
+This says that the value of the ~Parent~ column in the table ~external~ must be
+contained within the tree: ~tree(Label)~ to which is assigned the name
+~external.Parent~. The children of this tree are taken from the column:
+~external.Label~ and the parents of the tree are taken from the column
+~external.Parent~.
 
-That is, to generate the tree, look into the table `external`, and for each
-value of the column `Label` (each "child") associate the "parent" indicated in
-the column `Parent` of that row. In this example this evaluates to:
+That is, to generate the tree, look into the table ~`external`~, and for each
+value of the column ~`Label`~ (each "child") associate the "parent" indicated
+in the column ~`Parent`~ of that row. In this example this evaluates to:
 
 #+begin_src clojure
 {:external.Parent
@@ -386,19 +405,19 @@ More generically:
  my_table   | col_1  | tree(col_2)
 #+end_example
 
-In this case a tree named my_table.col_1 whose children are taken from the
-contents of my_table.col_2 and whose associated parents are taken from
-my_table.col_1.
+In this case a tree named ~my_table.col_1~ whose children are taken from the
+contents of ~my_table.col_2~ and whose associated parents are taken from
+~my_table.col_1~.
 
-As far as validation goes, when a rown like this is encountered in the `field`
-table, we will need to validate that all instances of `col_1` in `my_table` are
-in the tree tree(col_2).
+As far as validation goes, when a rown like this is encountered in the ~`field`~
+table, we will need to validate that all instances of ~`col_1`~ in ~`my_table`~ are
+in the tree ~tree(col_2)~.
 
-Note that, within my_table, the "parent" column col_1 could in principle
-contain multiple parents split by a split character (e.g, "|").
+Note that, within ~my_table~, the "parent" column ~col_1~ could in principle
+contain multiple parents split by a split character (e.g, ~|~).
 
-SQL code to generate tree(Label) for external.Parent (adapted from
-https://www.vivekkalyan.com/splitting-comma-seperated-fields-sqlite):
+_SQL code to generate tree(Label) for external.Parent_
+(adapted from https://www.vivekkalyan.com/splitting-comma-seperated-fields-sqlite)
 
 #+begin_src sql
 WITH RECURSIVE split(`Label`, `splitParent`, `str`) AS (
@@ -433,7 +452,7 @@ WHERE `Parent` = ''
 ORDER BY `Label`;
 #+end_src
 
-Note that the tree() function accepts an optional parameter specifying another
+Note that the ~tree()~ function accepts an optional parameter specifying another
 tree name. E.g.,
 
 #+begin_example
@@ -442,28 +461,28 @@ tree name. E.g.,
  external | Parent | tree(Label, table_name.column_name)
 #+end_example
 
-It is assumed that the tree table_name.column_name has already been
+It is assumed that the tree ~table_name.column_name~ has already been
 defined. Presumably the SQL will have been generated similarly to above when
 that tree has been defined. In terms of validation we will just have to check
-that all the values of the external.Parent column are in either:
+that all the values of the ~external.Parent~ column are in either:
 
-  external.Parent (a tree name) := tree(Label)
+  ~external.Parent~ (a tree name) := ~tree(Label)~
 
   or
 
-  table_name.column_name (a tree name) := tree(whatever)
+  ~table_name.column_name~ (a tree name) := ~tree(whatever)~
 
-*Questions*
+_Questions_
 
-- In valve.clj we actually generate maps corresponding to trees and store them
-  in `config`. Do we want to do something similar, i.e., create a table for
+- In =valve.clj= we actually generate maps corresponding to trees and store them
+  in ~config~. Do we want to do something similar, i.e., create a table for
   them in Sqlite? Or do we want to generate them on the fly in a temp table
   every time?
 
 * under
-Assume that we have generated a tree in accordance with `tree` (see
+Assume that we have generated a tree in accordance with ~tree~ (see
 above). Let's assume that we have populated the following table which
-corresponds to `external.Parent`.
+corresponds to ~`external.Parent`~.
 
 *Note* that I have added an extra parent ('disease stage') to 'dengue
 hemorrhagic fever' - just so that we can have a case of multiple parents to
@@ -494,12 +513,13 @@ occurrence of infectious disease                   | occurrence of disease
 organism                                           | material entity
 #+end_example
 
-The syntax of `under` is as follows: under(table.column, "top level",
-[direct=true])
+The syntax of ~under~ is as follows:
+ ~under(table.column, "top level", [direct=true])~
 
-We will need to look for all the descendants of "top level" in the tree. In other words what's
-required is a reverse search. For instance suppose we specify under(table.column, 'material
-entity'). The children of material entity are:
+We will need to look for all the descendants of "top level" in the tree. In
+other words what's required is a reverse search. For instance suppose we
+specify ~under(table.column, 'material entity')~. The children of material
+entity are:
 - organism (direct)
 - Dengue virus (indirect)
 - Hepacivirus C (indirect)
@@ -512,18 +532,19 @@ table    | column                     | condition
 exposure | Exposure Material Reported | under(external.Parent, "material entity")
 #+end_example
 
-Then what we need to do is to validate that the contentx of the Exposure Material Reported column
-in the exposure table are all underneath "material entity" in the tree associated with
-external.Parent (the one described above).
+Then what we need to do is to validate that the contents of the
+~`Exposure Material Reported`~ column in the exposure table are all underneath
+"material entity" in the tree associated with ~external.Parent~ (the one
+described above).
 
-The direct = true case:
+The ~direct = true~ case:
 #+begin_src sql
 select child
 from external_parent_tree
 where parent='material entity';
 #+end_src
 
-The direct != true case:
+The ~direct != true~ case:
 #+begin_src sql
 with recursive tree(`child`, `parent`) as (
   select `child`, `parent`
