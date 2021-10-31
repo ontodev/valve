@@ -197,10 +197,9 @@ The result will look like:
 
 Note that the "NFL teams" example was relatively simple insofar as we needed to
 validate the ~in()~ condition for each of the captures, which in our SQL code
-translated to ~capture in (select teams from nfl) as valid_pref~.
-
-In the general case there will be multiple types of conditions. This seems like
-it will get complex very quickly. Notice, however, that the form of the string
+translated to ~capture in (select teams from nfl) as valid_pref~. In the
+general case there will be multiple types of conditions. This seems like it
+will get complex very quickly. Notice, however, that the form of the string
 returned by the ~regexp_capture()~ function is:
 ="capture<delim>capture<delim>capture"=, which is the same as the form required
 by the [[#split][split]] function (see below). In other words, once we have validated that
