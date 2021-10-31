@@ -201,7 +201,7 @@ translated to ~capture in (select teams from nfl) as valid_pref~. In the
 general case there will be multiple types of conditions. This seems like it
 will get complex very quickly. Notice, however, that the form of the string
 returned by the ~regexp_capture()~ function is:
-="capture<delim>capture<delim>capture"=, which is the same as the form required
+~"capture<delim>capture<delim>capture"~, which is the same as the form required
 by the [[#split][split]] function (see below). In other words, once we have validated that
 the syntax of one of the values in ~`sports`.`prefs`~ is correct, we can then
 call ~split~ to do the rest of the job for us; i.e., ~split("@", 3, nfl.teams,
