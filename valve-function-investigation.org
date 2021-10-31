@@ -1,6 +1,11 @@
 #+title:Converting VALVE functions into SQL
 
 * Notes:
+  - In the analyses below it is assumed that we have actually been able to
+    parse the arguments to a given function. This is non-trivial, but the same
+    method can probably be used to do this for all functions. We will bracket
+    this for now.
+
   - (from James): To handle the nested conditions, I expect the general
     strategy will be to use multiple Common Table Expressions (CTEs): WITH
     first AS (...), second AS (...), third AS (...) SELECT ... . I've never
@@ -20,7 +25,170 @@ when an expression is a datatype that has a parent. In that case we will need
 to generate queries for the original datatype and also for its ancestors.
 
 * concat
-TBD
+
+Consider:
+
+#+begin_example
+ table    | column | condition
+--------------------------------------------------------------------------------------
+ external | ID     | concat(label, " ; ", in(table.column), " & ", under(table.column))
+#+end_example
+
+And suppose that the ~`external`~ table looks like:
+
+#+begin_example
+ ID
+-----------------
+ foo ; bar & baz
+ goo ; jar & jazz
+#+end_example
+
+The function will then need to split up the ~`ID`~ column using the pattern
+passed to the ~concat~ function. In this case it says that the contents of
+~`external`.`ID`~ should conform to:
+
+- an expression which must correspond to a label, followed by:
+- a semicolon surrounded by spaces, followed by:
+- an expression which must be ~in~ the column: ~`table`.`column`~, followed by:
+- an ampersand surrounded by spaces, followed by:
+- an expression which must be ~under~ the column: ~`table`.`column`~.
+
+Here is another, slightly simpler, example:
+
+#+begin_example
+ table    | column | condition
+-----------------------------------------------------------------------------------------------------------------------------
+ sports   | prefs  | concat("My three favourite NFL teams: 1. ", in(nfl.teams), ", 2. " in(nfl.teams), ", 3. ", in(nfl.teams)
+#+end_example
+
+where the ~nfl~ table has the following contents:
+#+begin_example
+ teams
+------------
+ Bears
+ Lions
+ Packers
+ Bills
+ Patriots
+ Seahawks
+ 49ers
+ ...
+#+end_example
+
+Rows in the ~`sports`~ table will look like:
+
+#+begin_example
+ fan    | prefs
+-----------------------------------------------------------------------
+ Mike   | My three favourite NFL teams: 1. Packers, 2. Bills, 3. Seahawks
+ Jenny  | My three favourite NFL teams: 1. Bears, 2. Leafs, 3. Patriots
+#+end_example
+
+Note that in the second row, 'Leafs' is not ~in(nfl.teams)~ (since the Leafs
+are a hockey team), so this should show up as invalid.
+
+One thing we might be able to do is to take the arguments to ~concat~ and use
+them to create a regular expression. That regular expression could then be
+matched against the target column. So in the first example we'd want to
+validate that the contents of ~ID~ look like ~^\w+ ; \w+ & \w+$~ and in the
+second case we'd want to validate that the contents of ~prefs~ look like: ~^My
+three favourite NFL teams: 1. \w+, 2. \w+, 3. \w+$~.
+
+It would be nice if the regex function we implement could support capturing,
+e.g.,
+
+ ~^My three favourite NFL teams: 1. (\w+), 2. (\w+), 3. (\w+)$~.
+
+Unfortunately, although we can of course implement capturing in the underlying
+Java code for our user-defined function, the [[https://www.javadoc.io/doc/org.xerial/sqlite-jdbc/3.36.0/org/sqlite/Function.html][API for user defined functions]]
+doesn't seem to allow us to actually return them *directly*; i.e., the various
+~result()~ functions only support returning byte arrays, numbers, and
+strings. Apparently SQLite also supports so-called [[https://www.sqlite.org/vtab.html][table-valued functions]], but
+that is a whole other kettle of fish, and it's not clear that we can use these
+in the same way that we use user-defined functions.
+
+There is a workaround, though. It is slightly clunkier but it should work. The
+idea is to have the ~regexp_capture()~ (or whatever we call it) send back the
+list of captures as a *delimited string*, i.e.,
+
+#+begin_src java
+protected void xFunc() throws SQLException {
+  // A bunch of code can go here to do the capturing by calling Java's
+  // java.util.regex library
+  // ...
+  // Then we return what we have captured:
+  String retString = new String();
+  for (String capture : captures) {
+    retString += catpure;
+    retString += "@";
+  }
+  result(retString);
+}
+#+end_src
+
+~@~ is probably not the best choice of delimiter, but we can likely find
+something suitable, e.g., a non-printable character. So to sum up (assuming
+that we have parsed the arguments to concat, we then):
+
+1. Generate a match string, which in our example would be: "My three favourite
+   NFL teams: 1. (\w+), 2. (\w+), 3. (\w+)"
+
+2. Call ~regexp_capture()~ on the contents of the ~`sports`.`prefs`~ table,
+   using the match string generated as the second argument. Something like:
+
+#+begin_src sql
+select regexp_capture(prefs, "My three favourite NFL teams: 1. (\w+), 2. (\w+), 3. (\w+)")
+from sports;
+#+end_src
+
+If the capture has been successful, we will get back a string that looks
+something like:
+
+"capture1@capture2@capture3"
+
+3. We can then split this string and validate each capture in accordance with
+   its corresponding argument, which in this case would be ~in(nfl.teams)~
+   for all three.
+
+Here is some code to do this:
+#+begin_src sql
+with captures(fan, capture) as (
+  with recursive captures(fan, capture, str) as (
+    select
+      fan,
+      '',
+      regexp_capture(prefs, "My three favourite NFL teams: 1. (\w+), 2. (\w+), 3. (\w+)")
+    from sports
+    union all
+    select
+      fan,
+      substr(str, 0, instr(str, '@')),
+      substr(str, instr(str, '@')+1)
+    from captures where str != ''
+  )
+  select fan, capture
+  from captures
+  where capture != ''
+)
+select
+  fan,
+  capture,
+  capture in (select teams from nfl) as valid_pref
+from captures
+order by fan;
+#+end_src
+
+The result will look like:
+#+begin_example
+ fan   | capture  | valid
+-------------------------
+ Jenny | Bears    | 1
+ Jenny | Leafs    | 0
+ Jenny | Patriots | 1
+ Mike  | Packers  | 1
+ Mike  | Bills    | 1
+ Mike  | Seahawks | 1
+#+end_example
 
 * distinct
 
