@@ -24,7 +24,7 @@ TBD
 
 * distinct
 
-_Documentation from the VALVE README_
+*Documentation from the VALVE README*
 Usage: ~distinct(expr, [table.column, ...])~
 
 This function validates that the contents of the target column are all
@@ -33,7 +33,7 @@ distinct. If other ~table.column~ pairs (one or more) are provided after the
 values. The ~expr~ is either a datatype or another function to perform on the
 contents of the column.
 
-_Examples:_
+*Examples:*
 
 #+begin_example
  table    | column | condition
@@ -77,7 +77,7 @@ must not be one of the values in ~table.column~ and must be distinct.
 * in
 Usage: ~in(str-or-column, [str-or-column, ...])~
 
-_Interpretation_
+*Interpretation*
 
 Suppose we have the following rows in the field table:
 
@@ -100,7 +100,7 @@ The second row says that all values in column: ~`exposure`.`Disease Reported`~
 should match either something in the ~`external`.`Label`~ column or something
 in the ~`external`.`Parent`~ column.
 
-_Implementation_
+*Implementation*
 
 This function seems pretty straightforward to implement.
 
@@ -120,7 +120,7 @@ select distinct label from labels;
 
 * list
 
-_Documentation from VALVE README_
+*Documentation from VALVE README*
 
 ~Usage: list("char", expr)~
 
@@ -129,7 +129,7 @@ and then checks expr on each sub-value. The expr is either a datatype or
 another function to perform. If one sub-value fails the expr check, this
 function fails.
 
-_Interpretation_
+*Interpretation*
 
 Consider:
 
@@ -149,7 +149,7 @@ The case of verifying against a function belongs to the problem of composing
 functions, which is a general problem that has nothing to do with ~list~ per
 se. Similarly for parents of datatypes.
 
-_Example_
+*Example*
 
 Imagine the ~plugh~ table has the following contents:
 
@@ -281,7 +281,7 @@ from result
 where id = <id>;
 #+end_src
 
-_Here is a single query to get all of the info:_
+*Here is a single query to get all of the info:*
 
 #+begin_src sql
 with split(reference, id, bar) as (
@@ -357,7 +357,37 @@ The result is:
 #+end_example
 
 * sub
-TBD
+
+Consider the following example row:
+#+begin_example
+ table | column | condition
+----------------------------------------------------------
+ foo   | bar    | sub(s/pattern/replacement/[flags], expr)
+#+end_example
+
+*Interpretation:* The contents of ~`foo`.`bar`~ are transformed using the
+replacement regular expression, after which the result of the transformation is
+validated against ~expr~, which can be either a function or a datatype.
+
+*Implementation*
+
+1. We will have to create a user-defined function in Java to implement regular
+   expression replacement. We have already shown that it is possible to
+   implement a user-defined function to determine whether a string matches a
+   given regular expression. Creating another function to implement replacement
+   should be pretty straightforward since we can just use the Java libraries.
+
+2. Assuming that we have implemented a regular expression replacement function
+   as above, the rest should be pretty straightforward. We would simply have to
+   do something like the following in the case, say, of ~trimmed_line~:
+
+   Instead of:
+
+   ~where regexp_matches(`value`, '^\w.*\w$')")~
+
+   We would have something like:
+
+   ~where regexp_matches(regexp_replace(value, <replacement_pattern>), '^\w.*\w$')~
 
 * tree
 Consider the following row from the ~field~ table:
@@ -416,7 +446,7 @@ in the tree ~tree(col_2)~.
 Note that, within ~my_table~, the "parent" column ~col_1~ could in principle
 contain multiple parents split by a split character (e.g, ~|~).
 
-_SQL code to generate tree(Label) for external.Parent_
+*SQL code to generate tree(Label) for external.Parent*
 (adapted from https://www.vivekkalyan.com/splitting-comma-seperated-fields-sqlite)
 
 #+begin_src sql
@@ -472,7 +502,7 @@ that all the values of the ~external.Parent~ column are in either:
 
   ~table_name.column_name~ (a tree name) := ~tree(whatever)~
 
-_Questions_
+*Questions*
 
 - In =valve.clj= we actually generate maps corresponding to trees and store them
   in ~config~. Do we want to do something similar, i.e., create a table for
