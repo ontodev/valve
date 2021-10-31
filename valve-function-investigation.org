@@ -195,6 +195,14 @@ The result will look like:
  Mike  | Seahawks | 1
 #+end_example
 
+Note that the "NFL teams" example was relatively simple insofar as we needed to
+validate the ~in()~ condition for all three, which in our SQL code translated
+to ~capture in (select teams from nfl) as valid_pref~.
+
+In the general case there will be multiple types of conditions, some of which
+might be nested, etc., and the query can get complex. Nevertheless *I think*
+this basic strategy should continue to work.
+
 * distinct
 
 *Documentation from the VALVE README*
