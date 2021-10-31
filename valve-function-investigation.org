@@ -208,7 +208,7 @@ call ~split~ to do the rest of the job for us; i.e., ~split("@", 3, nfl.teams,
 nhl.teams, nba.teams)~ (or whatever).
 
 Note that since the delimiter being used in ~regexp_capture()~ (e.g., ~@~) has
-nothing to do with the "delimiter" arguments to ~concat()~ so using ~split()~
+nothing to do with the "delimiter" arguments to ~concat()~, using ~split()~
 in the way suggested should work *regardless* of the complexity of the
 arguments being passed to ~concat()~.
 
