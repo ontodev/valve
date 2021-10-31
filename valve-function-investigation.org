@@ -90,9 +90,14 @@ are a hockey team), so this should show up as invalid.
 One thing we might be able to do is to take the arguments to ~concat~ and use
 them to create a regular expression. That regular expression could then be
 matched against the target column. So in the first example we'd want to
-validate that the contents of ~ID~ look like ~^\w+ ; \w+ & \w+$~ and in the
-second case we'd want to validate that the contents of ~prefs~ look like: ~^My
-three favourite NFL teams: 1. \w+, 2. \w+, 3. \w+$~.
+validate that the contents of ~ID~ look like:
+
+~^\w+ ; \w+ & \w+$~
+
+and in the second case we'd want to validate that the contents of ~prefs~ look
+like:
+
+ ~^My three favourite NFL teams: 1. \w+, 2. \w+, 3. \w+$~.
 
 It would be nice if the regex function we implement could support capturing,
 e.g.,
