@@ -1,4 +1,4 @@
-#+title:Converting VALVE functions into SQL
+#+title:Converting existing [[https://github.com/ontodev/valve#functions][VALVE functions]] into SQL
 
 * Notes:
   - In the analyses below it is assumed that we have actually been able to
